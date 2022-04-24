@@ -11,10 +11,6 @@ class ProductoSerializer(serializers.ModelSerializer):
         fields = '__all__'
         model = Producto
         
-    def validate_almacen(self, data):
-        almacen = data['almacen']
-        if 1:
-            raise serializers.ValidationError("Almacen must be a number")
 
 class AlmacenSerializer(serializers.ModelSerializer):
     productos = serializers.SerializerMethodField()

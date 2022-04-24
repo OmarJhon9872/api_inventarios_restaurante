@@ -100,16 +100,30 @@ class ProductoShowAV(APIView):
         
     def put(self, request, id):
         try:
-            producto = Producto.objects.get(pk = id)
-            serializer = ProductoSerializer(producto, data=request.data)
-            if serializer.is_valid():
-                #producto.almacen = int(request.data['almacen'])
+            
+            if str(request.data.get('almacen')).isnumeric():
+                producto = Producto.objects.get(pk = id)
                 
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            else:
-                return Response({'error' : serializer.errors}, status = status.HTTP_400_BAD_REQUEST)
+                try:
+                    almacen = Almacen.objects.get(
+                        pk = request.data.get('almacen')
+                    )
+                    
+                    producto.almacen = almacen
+                    producto.save()
+                    
+                    serializer = ProductoSerializer(producto, data=request.data)
+                    if serializer.is_valid():    
+                        serializer.save()
+                        return Response(serializer.data, status=status.HTTP_200_OK)
                 
+                except Almacen.DoesNotExist:
+                    return Response({'error':'Almacen no encontrado correctamente'}, status=status.HTTP_404_NOT_FOUND)
+                    
+                else:
+                    return Response({'error' : serializer.errors}, status = status.HTTP_400_BAD_REQUEST)
+            else: 
+                return Response({'error' : 'Almacen no indicado correctamente'}, status = status.HTTP_400_BAD_REQUEST)
         except Producto.DoesNotExist:
             return Response({'error':'Producto no encontrado put'}, status=status.HTTP_404_NOT_FOUND)
         
@@ -117,7 +131,7 @@ class ProductoShowAV(APIView):
         try:
             producto = Producto.objects.get(pk = id)    
         
-            Producto.delete()
+            producto.delete()
             return Response({'status': 'Producto eliminado'}, status=status.HTTP_204_NO_CONTENT)
                 
         except Producto.DoesNotExist:
@@ -125,7 +139,12 @@ class ProductoShowAV(APIView):
         
     
 class AlmacenDetailProductoAV(APIView):
-    def get(self, request):
-        almacenes = Almacen.objects.all()
-        serializer = AlmacenSerializer(almacenes, many = True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def get(self, request, id):
+        try:
+            producto = Producto.objects.get(pk = id)
+            almacen = producto.almacen
+            serializer = AlmacenSerializer(almacen)
+            return Response(serializer.data['nombre'], status=status.HTTP_200_OK)
+        
+        except Producto.DoesNotExist:
+            return Response({'error': 'Almacen no encontrado'}, status=status.HTTP_404_NOT_FOUND)
